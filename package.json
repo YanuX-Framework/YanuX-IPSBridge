@@ -1,0 +1,19 @@
+{
+  "name": "@yanux/ipsbridge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Pedro Albuquerque Santos",
+    "email": "pedro@albuquerques.net",
+    "url": "https://pedro.albuquerques.net"
+  },
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@yanux/coordinator": "^1.0.0",
+    "autobahn": "^20.9.2"
+  }
+}
