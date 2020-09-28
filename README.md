@@ -1,2 +1,2 @@
-# YanuX-IPSBridge
-YanuX IPSBridge
+# YanuX IPS Bridge
+YanuX IPS Bridge
