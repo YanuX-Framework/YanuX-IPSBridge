@@ -1,13 +1,5 @@
-const autobahn = require('autobahn');
+const ServerConnection = require('./src/ServerConnection');
 
-const connection = new autobahn.Connection({ url: 'wss://indoorlocationapp.herokuapp.com/ws/', realm: 'realm1' });
+const conn = new ServerConnection('wss://indoorlocationapp.herokuapp.com/ws/');
 
-connection.onopen = function (session) {
-    console.log('Connected');
-    session.subscribe('onLocationUpdate', event => {
-        console.log('Event:', event);
-    });
-};
-
-connection.open();
-
+conn.connect();

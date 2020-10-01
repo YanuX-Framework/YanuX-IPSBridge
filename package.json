@@ -2,7 +2,7 @@
   "name": "@yanux/ipsbridge",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,6 +17,6 @@
     "@feathersjs/feathers": "^4.5.8",
     "@feathersjs/socketio-client": "^4.5.8",
     "autobahn": "^20.9.2",
-    "socket.io-client": "^2.3.0"
+    "socket.io-client": "^2.3.1"
   }
 }
