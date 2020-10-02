@@ -1,3 +1,4 @@
+const util = require('util');
 const autobahn = require('autobahn');
 
 module.exports = class ServerConnection {
@@ -5,10 +6,10 @@ module.exports = class ServerConnection {
         this.url = url;
         this.realm = realm;
         this.connection = new autobahn.Connection({ url: this.url, realm: this.realm });
-        this.connection.onopen = function (session) {
-            console.log('Connected');
+        this.connection.onopen = session => {
+            console.log('Connected to Indoor Location Server');
             session.subscribe('onLocationUpdate', event => {
-                console.log('Event:', event);
+                console.log('onLocationUpdate:', util.inspect(event, false, null, true));
             });
         };
     }
