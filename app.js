@@ -24,7 +24,7 @@ const main = async () => {
             email: 'admin@yanux.org',
             password: 'admin'
         });
-        const locationService = client.service('location');
+        const locationService = client.service('locations');
         const conn = new IndoorAppServerConnection(
             INDOORAPP_SERVER_URI,
             INDOORAPP_SERVER_REALM,
