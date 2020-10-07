@@ -41,7 +41,6 @@ module.exports = class IndoorAppServerConnection {
                     //TODO: Prepare location object with positioning information based on fingerprinting or trilateration.
                     return location;
                 });
-
                 console.log('> locations:', util.inspect(locations, false, null, true));
                 try {
                     const locationUpdatesResults = await Promise.all(
@@ -73,6 +72,14 @@ module.exports = class IndoorAppServerConnection {
                 }, this.inactiveLocationsTimeout);
             });
         };
+        this.connection.onclose = () => {
+            console.log('Disconnected from Indoor App Server');
+        };
     }
-    connect() { this.connection.open(); }
+    connect() {
+        this.connection.open();
+     }
+     disconnect() {
+        this.connection.close('wamp.goodbye.normal', 'Disconnecting from server.');
+     }
 }
