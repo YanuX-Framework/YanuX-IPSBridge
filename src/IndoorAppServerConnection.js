@@ -1,6 +1,6 @@
 const util = require('util');
 const autobahn = require('autobahn');
-const { throws } = require('assert');
+const _ = require('lodash');
 
 module.exports = class IndoorAppServerConnection {
     constructor(url, realm, locationService, inactiveLocationsTimeout = 5000) {
@@ -22,7 +22,7 @@ module.exports = class IndoorAppServerConnection {
                         timestamp: new Date()
                     };
                     //Preparing location object with proximity information.
-                    if (locationUpdate.position) {
+                    if (locationUpdate.position && !_.isArray(locationUpdate.position.Regression)) {
                         location.proximity = {
                             distance: locationUpdate.position.Regression,
                             zone: locationUpdate.position.Classification
@@ -37,8 +37,14 @@ module.exports = class IndoorAppServerConnection {
                                 };
                             }
                         }
-                    }
-                    //TODO: Prepare location object with positioning information based on fingerprinting or trilateration.
+                    } else if (locationUpdate.position && _.isArray(locationUpdate.position.Regression)) {
+                        location.position = {
+                            x: locationUpdate.position.Regression[0],
+                            y: locationUpdate.position.Regression[1],
+                            place: locationUpdate.radio_map,
+                            zone: locationUpdate.position.Classification
+                        };
+                    } else { console.error('>> UNKNOWN locationUpdate format!') }
                     return location;
                 });
                 console.log('> locations:', util.inspect(locations, false, null, true));
@@ -54,7 +60,7 @@ module.exports = class IndoorAppServerConnection {
                                 query['proximity.beacon.major'] = location.proximity.beacon.major;
                                 query['proximity.beacon.minor'] = location.proximity.beacon.minor;
                             }
-                            return this.locationService.patch(null, location, { query })
+                            return this.locationService ? this.locationService.patch(null, location, { query }) : Promise.resolve(null);
                         })
                     );
                     console.log('>> Updated Locations:', util.inspect(locationUpdatesResults, false, null, true));
@@ -63,12 +69,14 @@ module.exports = class IndoorAppServerConnection {
                 clearTimeout(this.inactiveLocationsTimer)
                 this.inactiveLocationsTimer = setTimeout(async () => {
                     console.log('>> Clearing Inactive Locations...');
-                    try {
-                        const removedInactiveLocations = await this.locationService.remove(null,
-                            { query: { timestamp: { $lt: new Date().getTime() - this.inactiveLocationsTimeout } } }
-                        );
-                        console.log('>>> Removed Inactive Locations:', util.inspect(removedInactiveLocations, false, null, true));
-                    } catch (e) { console.error('>> Error Removing Inactive Locations:', e); }
+                    if (this.locationService) {
+                        try {
+                            const removedInactiveLocations = await this.locationService.remove(null,
+                                { query: { timestamp: { $lt: new Date().getTime() - this.inactiveLocationsTimeout } } }
+                            );
+                            console.log('>>> Removed Inactive Locations:', util.inspect(removedInactiveLocations, false, null, true));
+                        } catch (e) { console.error('>> Error Removing Inactive Locations:', e.message); }
+                    }
                 }, this.inactiveLocationsTimeout);
             });
         };
@@ -78,8 +86,8 @@ module.exports = class IndoorAppServerConnection {
     }
     connect() {
         this.connection.open();
-     }
-     disconnect() {
+    }
+    disconnect() {
         this.connection.close('wamp.goodbye.normal', 'Disconnecting from server.');
-     }
+    }
 }

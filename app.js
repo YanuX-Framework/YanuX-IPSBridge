@@ -29,15 +29,19 @@ const main = () => {
                 email: 'admin@yanux.org',
                 password: 'admin'
             });
+
             const locationService = client.service('locations');
+
             const conn = new IndoorAppServerConnection(
                 INDOORAPP_SERVER_URI,
                 INDOORAPP_SERVER_REALM,
                 locationService,
                 INACTIVE_LOCATIONS_TIMEOUT
             );
+            
             conn.connect();
-            process.on('SIGINT', function() {
+
+            process.on('SIGINT', function () {
                 console.log('Disconnecting from YanuX Broker and Indoor App Server');
                 conn.disconnect();
                 client.logout();

@@ -15,10 +15,11 @@
   },
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@feathersjs/authentication-client": "^4.5.8",
-    "@feathersjs/feathers": "^4.5.8",
-    "@feathersjs/socketio-client": "^4.5.8",
+    "@feathersjs/authentication-client": "^4.5.9",
+    "@feathersjs/feathers": "^4.5.9",
+    "@feathersjs/socketio-client": "^4.5.9",
     "autobahn": "^20.9.2",
+    "lodash": "^4.17.20",
     "nodemon": "^2.0.4",
     "socket.io-client": "^2.3.1"
   }
