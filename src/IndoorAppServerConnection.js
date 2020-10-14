@@ -9,7 +9,7 @@ module.exports = class IndoorAppServerConnection {
         this.locationService = locationService;
         this.connection = new autobahn.Connection({ url: this.url, realm: this.realm });
         this.inactiveLocationsTimeout = inactiveLocationsTimeout;
-        this.inactiveLocationsTimer = null;
+        this.inactiveLocationsInterval = null;
         this.beaconRegex = /([ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+)\-(\d+)\-(\d+)/i
         this.connection.onopen = session => {
             console.log('Connected to Indoor App Server');
@@ -59,6 +59,8 @@ module.exports = class IndoorAppServerConnection {
                                 query['proximity.beacon.uuid'] = location.proximity.beacon.uuid;
                                 query['proximity.beacon.major'] = location.proximity.beacon.major;
                                 query['proximity.beacon.minor'] = location.proximity.beacon.minor;
+                            } else if (location.position) {
+                                query['position'] = { $exists: true };
                             }
                             return this.locationService ? this.locationService.patch(null, location, { query }) : Promise.resolve(null);
                         })
@@ -80,9 +82,7 @@ module.exports = class IndoorAppServerConnection {
                 }, this.inactiveLocationsTimeout);
             });
         };
-        this.connection.onclose = () => {
-            console.log('Disconnected from Indoor App Server');
-        };
+        this.connection.onclose = () => { console.log('Disconnected from Indoor App Server'); };
     }
     connect() {
         this.connection.open();

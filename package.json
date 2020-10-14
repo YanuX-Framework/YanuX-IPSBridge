@@ -2,11 +2,15 @@
   "name": "@yanux/ipsbridge",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "execute": "node app.js",
+    "start": "npm run watch",
     "watch": "npx nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "yanux-ips-bridge": "./app.js"
   },
   "author": {
     "name": "Pedro Albuquerque Santos",
@@ -20,7 +24,8 @@
     "@feathersjs/socketio-client": "^4.5.9",
     "autobahn": "^20.9.2",
     "lodash": "^4.17.20",
-    "nodemon": "^2.0.4",
+    "nodemon": "^2.0.5",
     "socket.io-client": "^2.3.1"
-  }
+  },
+  "devDependencies": {}
 }

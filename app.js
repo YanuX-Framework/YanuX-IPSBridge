@@ -8,7 +8,7 @@ const IndoorAppServerConnection = require('./src/IndoorAppServerConnection');
 const INDOORAPP_SERVER_URI = 'wss://indoorlocationapp.herokuapp.com/ws/';
 const INDOORAPP_SERVER_REALM = 'realm1';
 const YANUX_BROKER_URI = 'http://localhost:3002/';
-const INACTIVE_LOCATIONS_TIMEOUT = 12000;
+const INACTIVE_LOCATIONS_TIMEOUT = 6000;
 const RETRY_INIT_TIMER = 3000;
 
 const main = () => {
