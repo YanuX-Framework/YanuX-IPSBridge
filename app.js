@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const io = require('socket.io-client');
 const feathers = require('@feathersjs/feathers');
 const socketio = require('@feathersjs/socketio-client');
@@ -24,11 +26,7 @@ const main = () => {
 
     const init = async () => {
         try {
-            await client.authenticate({
-                strategy: 'local',
-                email: 'admin@yanux.org',
-                password: 'admin'
-            });
+            await client.authenticate({ strategy: 'local', email: 'admin@yanux.org', password: 'admin' });
 
             const locationService = client.service('locations');
 
@@ -38,7 +36,7 @@ const main = () => {
                 locationService,
                 INACTIVE_LOCATIONS_TIMEOUT
             );
-            
+
             conn.connect();
 
             process.on('SIGINT', function () {
