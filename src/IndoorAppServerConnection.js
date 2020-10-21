@@ -41,7 +41,7 @@ module.exports = class IndoorAppServerConnection {
                         location.position = {
                             x: locationUpdate.position.Regression[0],
                             y: locationUpdate.position.Regression[1],
-                            //orientation: null, //TODO: Get orientation from server!
+                            orientation: locationUpdate.orientation,
                             place: locationUpdate.radio_map,
                             zone: locationUpdate.position.Classification
                         };
@@ -85,10 +85,6 @@ module.exports = class IndoorAppServerConnection {
         };
         this.connection.onclose = () => { console.log('Disconnected from Indoor App Server'); };
     }
-    connect() {
-        this.connection.open();
-    }
-    disconnect() {
-        this.connection.close('wamp.goodbye.normal', 'Disconnecting from server.');
-    }
+    connect() { this.connection.open(); }
+    disconnect() { this.connection.close('wamp.goodbye.normal', 'Disconnecting from server.'); }
 }
