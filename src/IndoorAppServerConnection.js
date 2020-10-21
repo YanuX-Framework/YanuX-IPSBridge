@@ -41,6 +41,7 @@ module.exports = class IndoorAppServerConnection {
                         location.position = {
                             x: locationUpdate.position.Regression[0],
                             y: locationUpdate.position.Regression[1],
+                            //orientation: null, //TODO: Get orientation from server!
                             place: locationUpdate.radio_map,
                             zone: locationUpdate.position.Classification
                         };
