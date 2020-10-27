@@ -1,0 +1,11 @@
+{
+    "indoorapp_server": {
+        "url": "wss://indoorlocationapp.herokuapp.com/ws/",
+        "realm": "realm1"
+    },
+    "yanux_broker": {
+        "url": "http://localhost:3002/"
+    },
+    "inactive_location_timeout": 7500,
+    "retry_timer": 3000
+}

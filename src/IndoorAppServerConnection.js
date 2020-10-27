@@ -2,6 +2,9 @@ const util = require('util');
 const autobahn = require('autobahn');
 const _ = require('lodash');
 
+const degToRad = v => v * Math.PI / 180;
+const headingVectorFromOrientation = orientation => [Math.cos(orientation), Math.sin(orientation)];
+
 module.exports = class IndoorAppServerConnection {
     constructor(url, realm, locationService, inactiveLocationsTimeout = 5000) {
         this.url = url;
@@ -41,10 +44,11 @@ module.exports = class IndoorAppServerConnection {
                         location.position = {
                             x: locationUpdate.position.Regression[0],
                             y: locationUpdate.position.Regression[1],
-                            orientation: locationUpdate.orientation,
+                            orientation: (360 - locationUpdate.orientation) % 360,
                             place: locationUpdate.radio_map,
                             zone: locationUpdate.position.Classification
                         };
+                        location.position.headingVector = headingVectorFromOrientation(degToRad(location.position.orientation));
                     } else { console.error('>> UNKNOWN locationUpdate format!') }
                     return location;
                 });

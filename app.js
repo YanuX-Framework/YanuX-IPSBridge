@@ -5,29 +5,40 @@ const feathers = require('@feathersjs/feathers');
 const socketio = require('@feathersjs/socketio-client');
 const auth = require('@feathersjs/authentication-client');
 
-const IndoorAppServerConnection = require('./src/IndoorAppServerConnection');
+const config = require('./config');
 
-const INDOORAPP_SERVER_URI = 'wss://indoorlocationapp.herokuapp.com/ws/';
-const INDOORAPP_SERVER_REALM = 'realm1';
-const YANUX_BROKER_URI = 'http://localhost:3002/';
-const INACTIVE_LOCATIONS_TIMEOUT = 7500;
-const RETRY_INIT_TIMER = 3000;
+const IndoorAppServerConnection = require('./src/IndoorAppServerConnection');
 
 const main = () => {
     console.log('YanuX IPS Bridge');
-    const socket = io(YANUX_BROKER_URI, {
+
+    const socket = io(config.yanux_broker.url, {
         transports: ['websocket'],
         forceNew: true
     });
+
     const client = feathers();
     client.configure(socketio(socket));
     client.configure(auth());
+
     const init = async () => {
         try {
-            await client.authenticate({ strategy: 'local', email: 'admin@yanux.org', password: 'admin' });
+            await client.authenticate({
+                strategy: 'local',
+                email: 'admin@yanux.org',
+                password: 'admin'
+            });
+
             const locationService = client.service('locations');
-            const conn = new IndoorAppServerConnection(INDOORAPP_SERVER_URI, INDOORAPP_SERVER_REALM, locationService, INACTIVE_LOCATIONS_TIMEOUT);
+
+            const conn = new IndoorAppServerConnection(
+                config.indoorapp_server.url,
+                config.indoorapp_server.realm,
+                locationService,
+                config.inactive_location_timeout
+            );
             conn.connect();
+
             process.on('SIGINT', function () {
                 console.log('Disconnecting from YanuX Broker and Indoor App Server');
                 conn.disconnect();
@@ -35,8 +46,8 @@ const main = () => {
                 process.exit(0);
             });
         } catch (e) {
-            console.error('Error:', e);
-            setTimeout(init, RETRY_INIT_TIMER);
+            console.error('Error:', e, '\nRetrying in:', config.retry_timer);
+            setTimeout(init, config.retry_timer);
         }
     }
     init();
