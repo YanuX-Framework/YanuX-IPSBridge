@@ -13,6 +13,7 @@ module.exports = class IndoorAppServerConnection {
         this.connection = new autobahn.Connection({ url: this.url, realm: this.realm });
         this.inactiveLocationsTimeout = inactiveLocationsTimeout;
         this.inactiveLocationsInterval = null;
+        this.retryConnection = false;
         this.beaconRegex = /([ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+)\-(\d+)\-(\d+)/i
         this.connection.onopen = session => {
             console.log('Connected to Indoor App Server');
@@ -87,8 +88,21 @@ module.exports = class IndoorAppServerConnection {
                 }, this.inactiveLocationsTimeout);
             });
         };
-        this.connection.onclose = () => { console.log('Disconnected from Indoor App Server'); };
+        this.connection.onclose = () => {
+            if (this.retryConnection) {
+                console.log('Disconnected from Indoor App Server. Retrying to Connect...');
+                this.connection();
+            } else {
+                console.log('Disconnected from Indoor App Server.');
+            }
+        };
     }
-    connect() { this.connection.open(); }
-    disconnect() { this.connection.close('wamp.goodbye.normal', 'Disconnecting from server.'); }
+    connect() {
+        this.retryConnection = true;
+        this.connection.open();
+    }
+    disconnect() {
+        this.retryConnection = false;
+        this.connection.close('wamp.goodbye.normal', 'Disconnecting from server.');
+    }
 }

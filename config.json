@@ -4,7 +4,7 @@
         "realm": "realm1"
     },
     "yanux_broker": {
-        "url": "https://yanux-broker.herokuapp.com/",
+        "url": "http://localhost:3002/",
         "authentication": {
             "strategy": "local",
             "email": "admin@yanux.org",
