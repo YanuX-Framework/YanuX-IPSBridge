@@ -4,7 +4,12 @@
         "realm": "realm1"
     },
     "yanux_broker": {
-        "url": "http://localhost:3002/"
+        "url": "https://yanux-broker.herokuapp.com/",
+        "authentication": {
+            "strategy": "local",
+            "email": "admin@yanux.org",
+            "password": "admin"
+        }
     },
     "inactive_location_timeout": 7500,
     "retry_timer": 3000

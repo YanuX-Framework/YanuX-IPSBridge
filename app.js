@@ -23,11 +23,9 @@ const main = () => {
 
     const init = async () => {
         try {
-            await client.authenticate({
-                strategy: 'local',
-                email: 'admin@yanux.org',
-                password: 'admin'
-            });
+            const authenticationResult = await client.authenticate(config.yanux_broker.authentication);
+
+            console.log('YanuX Broker Authenticated:', authenticationResult);
 
             const locationService = client.service('locations');
 
