@@ -4,7 +4,7 @@ module.exports = {
         "realm": process.env.INDOORAPP_SERVER_REALM || "realm1"
     },
     "yanux_broker": {
-        "url": process.env.YANUX_BROKER_URL || "https://localhost:3002/",
+        "url": process.env.YANUX_BROKER_URL || "http://localhost:3002/",
         "authentication": {
             "strategy": process.env.YANUX_BROKER_AUTHENTICATION_STRATEGY || "local",
             "email": process.env.YANUX_BROKER_AUTHENTICATION_EMAIL || "admin@yanux.org",
