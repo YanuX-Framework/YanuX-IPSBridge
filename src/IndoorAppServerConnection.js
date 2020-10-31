@@ -91,7 +91,7 @@ module.exports = class IndoorAppServerConnection {
         this.connection.onclose = () => {
             if (this.retryConnection) {
                 console.log('Disconnected from Indoor App Server. Retrying to Connect...');
-                this.connection();
+                this.connect();
             } else {
                 console.log('Disconnected from Indoor App Server.');
             }
