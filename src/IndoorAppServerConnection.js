@@ -6,11 +6,16 @@ const degToRad = v => v * Math.PI / 180;
 const headingVectorFromOrientation = orientation => [Math.cos(orientation), Math.sin(orientation)];
 
 module.exports = class IndoorAppServerConnection {
-    constructor(url, realm, locationService, inactiveLocationsTimeout = 5000) {
+    constructor(url, realm, principal, ticket, locationService, inactiveLocationsTimeout = 5000) {
         this.url = url;
         this.realm = realm;
         this.locationService = locationService;
-        this.connection = new autobahn.Connection({ url: this.url, realm: this.realm });
+        this.connection = new autobahn.Connection({
+            url: this.url, realm: this.realm,
+            authmethods: ["ticket"],
+            authid: principal,
+            onchallenge: () => ticket
+        });
         this.inactiveLocationsTimeout = inactiveLocationsTimeout;
         this.inactiveLocationsInterval = null;
         this.retryConnection = false;

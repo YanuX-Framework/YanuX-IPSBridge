@@ -32,6 +32,8 @@ const main = () => {
             const conn = new IndoorAppServerConnection(
                 config.indoorapp_server.url,
                 config.indoorapp_server.realm,
+                config.indoorapp_server.authentication.principal,
+                config.indoorapp_server.authentication.ticket,
                 locationService,
                 config.inactive_location_timeout
             );
