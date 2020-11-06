@@ -50,7 +50,7 @@ module.exports = class IndoorAppServerConnection {
                         location.position = {
                             x: locationUpdate.position.Regression[0],
                             y: locationUpdate.position.Regression[1],
-                            orientation: (360 - locationUpdate.orientation) % 360,
+                            orientation: -locationUpdate.orientation % 360,
                             place: locationUpdate.radio_map,
                             zone: locationUpdate.position.Classification
                         };
