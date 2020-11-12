@@ -1,6 +1,7 @@
 const util = require('util');
 const autobahn = require('autobahn');
 const _ = require('lodash');
+const { mod } = require('mathjs');
 
 const degToRad = v => v * Math.PI / 180;
 const headingVectorFromOrientation = orientation => [Math.cos(orientation), Math.sin(orientation)];
@@ -18,7 +19,6 @@ module.exports = class IndoorAppServerConnection {
         });
         this.inactiveLocationsTimeout = inactiveLocationsTimeout;
         this.inactiveLocationsInterval = null;
-        this.retryConnection = false;
         this.beaconRegex = /([ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+)\-(\d+)\-(\d+)/i
         this.connection.onopen = session => {
             console.log('Connected to Indoor App Server');
@@ -50,7 +50,7 @@ module.exports = class IndoorAppServerConnection {
                         location.position = {
                             x: locationUpdate.position.Regression[0],
                             y: locationUpdate.position.Regression[1],
-                            orientation: -locationUpdate.orientation % 360,
+                            orientation: mod(-locationUpdate.orientation, 360),
                             place: locationUpdate.radio_map,
                             zone: locationUpdate.position.Classification
                         };
@@ -94,20 +94,13 @@ module.exports = class IndoorAppServerConnection {
             });
         };
         this.connection.onclose = () => {
-            if (this.retryConnection) {
-                console.log('Disconnected from Indoor App Server. Retrying to Connect...');
-                this.connect();
-            } else {
-                console.log('Disconnected from Indoor App Server.');
-            }
+            console.log('Disconnected from Indoor App Server.');
         };
     }
     connect() {
-        this.retryConnection = true;
         this.connection.open();
     }
     disconnect() {
-        this.retryConnection = false;
         this.connection.close('wamp.goodbye.normal', 'Disconnecting from server.');
     }
 }

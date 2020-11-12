@@ -8,7 +8,7 @@ module.exports = {
         }
     },
     "yanux_broker": {
-        "url": process.env.YANUX_BROKER_URL || "https://yanux-broker.herokuapp.com/", /*|| "http://localhost:3002/",*/
+        "url": process.env.YANUX_BROKER_URL /*|| "https://yanux-broker.herokuapp.com/"*/ || "http://localhost:3002/",
         "authentication": {
             "strategy": process.env.YANUX_BROKER_AUTHENTICATION_STRATEGY || "local",
             "email": process.env.YANUX_BROKER_AUTHENTICATION_EMAIL || "admin@yanux.org",
