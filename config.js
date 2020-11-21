@@ -1,6 +1,6 @@
 module.exports = {
     "indoorapp_server": {
-        "url": process.env.INDOORAPP_SERVER_URL || "wss://indoorlocationapp.herokuapp.com/ws/",
+        "url": process.env.INDOORAPP_SERVER_URL || "wss://indoorlocationapp.herokuapp.com/ws/" || "http://localhost:8080/ws/",
         "realm": process.env.INDOORAPP_SERVER_REALM || "realm1",
         "authentication": {
             "principal": process.env.INDOORAPP_SERVER_PRINCIPAL || "client1",
@@ -15,6 +15,6 @@ module.exports = {
             "password": process.env.YANUX_BROKER_AUTHENTICATION_PASSWORD || "admin"
         }
     },
-    "inactive_location_timeout": process.env.INACTIVE_LOCATION_TIMEOUT || 7500,
+    "inactive_location_timeout": process.env.INACTIVE_LOCATION_TIMEOUT || 6000,
     "retry_timer": process.env.RETRY_TIMER || 3000
 }
