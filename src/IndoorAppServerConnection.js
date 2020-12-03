@@ -22,7 +22,8 @@ module.exports = class IndoorAppServerConnection {
         this.inactiveLocationsTimeout = inactiveLocationsTimeout;
         this.inactiveLocationsInterval = null;
         this.movingAveragePeriod = movingAveragePeriod;
-        this.devicePositionMovingAverages = {};
+        this.positionsMovingAverages = {};
+        this.distanceMovingAverages = {};
         this.beaconRegex = /([ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+)\-(\d+)\-(\d+)/i
         this.connection.onopen = session => {
             console.log('Connected to Indoor App Server');
@@ -35,39 +36,58 @@ module.exports = class IndoorAppServerConnection {
                         timestamp: new Date()
                     };
                     //Preparing location object with proximity information.
-                    if (locationUpdate.position && !_.isArray(locationUpdate.position.Regression)) {
+                    if (locationUpdate.position && !_.isArray(locationUpdate.position.Regression) && locationUpdate.beacon) {
                         location.proximity = {
                             distance: locationUpdate.position.Regression,
                             zone: locationUpdate.position.Classification
                         };
-                        if (locationUpdate.beacon) {
-                            const beaconMatches = locationUpdate.beacon.match(this.beaconRegex);
-                            if (beaconMatches.length === 4) {
-                                location.proximity.beacon = {
-                                    uuid: beaconMatches[1],
-                                    major: beaconMatches[2],
-                                    minor: beaconMatches[3]
-                                };
+                        const beaconMatches = locationUpdate.beacon.match(this.beaconRegex);
+                        if (beaconMatches.length === 4) {
+                            location.proximity.beacon = {
+                                uuid: beaconMatches[1],
+                                major: beaconMatches[2],
+                                minor: beaconMatches[3]
+                            };
+                        }
+                        if (location.proximity && location.proximity.beacon) {
+                            const pId = location.deviceUuid + '-' + location.proximity.beacon.uuid + '-' + location.proximity.beacon.major + '-' + location.proximity.beacon.minor
+                            console.log('pId:', pId);
+                            if (!this.distanceMovingAverages[pId]) {
+                                const movingAverage = new MovingAverage(this.movingAveragePeriod);
+                                Array(this.movingAveragePeriod - 1).fill(location.proximity.distance).forEach(fillValue => {
+                                    movingAverage.update(fillValue);
+                                });
+                                this.distanceMovingAverages[pId] = movingAverage;
                             }
+                            this.distanceMovingAverages[pId].update(location.proximity.distance);
+                            try { location.proximity.distance = this.distanceMovingAverages[pId].getResult().toNumber(); }
+                            catch (e) { console.log('Distance Moving Average Still Not Available:', e.message); }
                         }
                     } else if (locationUpdate.position && _.isArray(locationUpdate.position.Regression)) {
-                        if (!this.devicePositionMovingAverages[location.UUID]) {
-                            this.devicePositionMovingAverages[location.UUID] = {
-                                x: new MovingAverage(this.movingAveragePeriod),
-                                y: new MovingAverage(this.movingAveragePeriod)
-                            }
-                        }
                         let x = locationUpdate.position.Regression[0];
                         let y = locationUpdate.position.Regression[1];
-
-                        this.devicePositionMovingAverages[location.UUID].x.update(x);
-                        this.devicePositionMovingAverages[location.UUID].y.update(y);
+                        if (!this.positionsMovingAverages[location.UUID]) {
+                            const movingAverageX = new MovingAverage(this.movingAveragePeriod);
+                            const movingAverageY = new MovingAverage(this.movingAveragePeriod);
+                            Array(this.movingAveragePeriod - 1).fill(x).forEach(fillValue => {
+                                movingAverageX.update(fillValue);
+                            });
+                            Array(this.movingAveragePeriod - 1).fill(y).forEach(fillValue => {
+                                movingAverageY.update(fillValue);
+                            });
+                            this.positionsMovingAverages[location.UUID] = {
+                                x: movingAverageX,
+                                y: movingAverageY
+                            }
+                        }
+                        this.positionsMovingAverages[location.UUID].x.update(x);
+                        this.positionsMovingAverages[location.UUID].y.update(y);
                         try {
-                            x = this.devicePositionMovingAverages[location.UUID].x.getResult().toNumber();
-                            y = this.devicePositionMovingAverages[location.UUID].y.getResult().toNumber();
+                            x = this.positionsMovingAverages[location.UUID].x.getResult().toNumber();
+                            y = this.positionsMovingAverages[location.UUID].y.getResult().toNumber();
                             console.log('Moving Average (' + x + ', ' + y + ')');
                         } catch (e) {
-                            console.log('Moving Average Still Not Available:', e.message);
+                            console.log('Position Moving Average Still Not Available:', e.message);
                         }
                         location.position = {
                             x, y,
@@ -110,7 +130,10 @@ module.exports = class IndoorAppServerConnection {
                                 { query: { timestamp: { $lt: new Date().getTime() - this.inactiveLocationsTimeout } } }
                             );
                             removedInactiveLocations.forEach(location => {
-                                delete this.devicePositionMovingAverages[location.UUID]
+                                delete this.positionsMovingAverages[location.UUID]
+                                if (location.proximity && location.proximity.beacon) {
+                                    delete this.positionsMovingAverages[location.deviceUuid + '-' + location.proximity.beacon.uuid + '-' + location.proximity.beacon.major + '-' + location.proximity.beacon.minor]
+                                }
                             });
                             console.log('>>> Removed Inactive Locations:', util.inspect(removedInactiveLocations, false, null, true));
                         } catch (e) { console.error('>> Error Removing Inactive Locations:', e.message); }
