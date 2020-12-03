@@ -2,12 +2,14 @@ const util = require('util');
 const autobahn = require('autobahn');
 const _ = require('lodash');
 const { mod } = require('mathjs');
+const { SMA: MovingAverage } = require('trading-signals');
 
-const degToRad = v => v * Math.PI / 180;
-const headingVectorFromOrientation = orientation => [Math.cos(orientation), Math.sin(orientation)];
+//TODO: Remove if the headingVector is no longer necessary!
+// const degToRad = v => v * Math.PI / 180;
+// const headingVectorFromOrientation = orientation => [Math.cos(orientation), Math.sin(orientation)];
 
 module.exports = class IndoorAppServerConnection {
-    constructor(url, realm, principal, ticket, locationService, inactiveLocationsTimeout = 5000) {
+    constructor(url, realm, principal, ticket, locationService, inactiveLocationsTimeout = 6000, movingAveragePeriod = 3) {
         this.url = url;
         this.realm = realm;
         this.locationService = locationService;
@@ -19,6 +21,8 @@ module.exports = class IndoorAppServerConnection {
         });
         this.inactiveLocationsTimeout = inactiveLocationsTimeout;
         this.inactiveLocationsInterval = null;
+        this.movingAveragePeriod = movingAveragePeriod;
+        this.devicePositionMovingAverages = {};
         this.beaconRegex = /([ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+)\-(\d+)\-(\d+)/i
         this.connection.onopen = session => {
             console.log('Connected to Indoor App Server');
@@ -47,14 +51,32 @@ module.exports = class IndoorAppServerConnection {
                             }
                         }
                     } else if (locationUpdate.position && _.isArray(locationUpdate.position.Regression)) {
+                        if (!this.devicePositionMovingAverages[location.UUID]) {
+                            this.devicePositionMovingAverages[location.UUID] = {
+                                x: new MovingAverage(this.movingAveragePeriod),
+                                y: new MovingAverage(this.movingAveragePeriod)
+                            }
+                        }
+                        let x = locationUpdate.position.Regression[0];
+                        let y = locationUpdate.position.Regression[1];
+
+                        this.devicePositionMovingAverages[location.UUID].x.update(x);
+                        this.devicePositionMovingAverages[location.UUID].y.update(y);
+                        try {
+                            x = this.devicePositionMovingAverages[location.UUID].x.getResult().toNumber();
+                            y = this.devicePositionMovingAverages[location.UUID].y.getResult().toNumber();
+                            console.log('Moving Average (' + x + ', ' + y + ')');
+                        } catch (e) {
+                            console.log('Moving Average Still Not Available:', e.message);
+                        }
                         location.position = {
-                            x: locationUpdate.position.Regression[0],
-                            y: locationUpdate.position.Regression[1],
+                            x, y,
                             orientation: mod(-locationUpdate.orientation, 360),
                             place: locationUpdate.radio_map,
                             zone: locationUpdate.position.Classification
                         };
-                        location.position.headingVector = headingVectorFromOrientation(degToRad(location.position.orientation));
+                        //TODO: Remove if the headingVector is no longer necessary!
+                        //location.position.headingVector = headingVectorFromOrientation(degToRad(location.position.orientation));
                     } else { console.error('>> UNKNOWN locationUpdate format!') }
                     return location;
                 });
@@ -87,6 +109,9 @@ module.exports = class IndoorAppServerConnection {
                             const removedInactiveLocations = await this.locationService.remove(null,
                                 { query: { timestamp: { $lt: new Date().getTime() - this.inactiveLocationsTimeout } } }
                             );
+                            removedInactiveLocations.forEach(location => {
+                                delete this.devicePositionMovingAverages[location.UUID]
+                            });
                             console.log('>>> Removed Inactive Locations:', util.inspect(removedInactiveLocations, false, null, true));
                         } catch (e) { console.error('>> Error Removing Inactive Locations:', e.message); }
                     }

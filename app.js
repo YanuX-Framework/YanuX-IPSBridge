@@ -35,7 +35,8 @@ const main = () => {
                 config.indoorapp_server.authentication.principal,
                 config.indoorapp_server.authentication.ticket,
                 locationService,
-                config.inactive_location_timeout
+                config.inactive_location_timeout,
+                config.moving_average_period
             );
             conn.connect();
 

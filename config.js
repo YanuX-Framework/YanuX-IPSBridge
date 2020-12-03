@@ -16,5 +16,6 @@ module.exports = {
         }
     },
     "inactive_location_timeout": process.env.INACTIVE_LOCATION_TIMEOUT || 6000,
-    "retry_timer": process.env.RETRY_TIMER || 3000
+    "retry_timer": process.env.RETRY_TIMER || 3000,
+    "moving_average_period": process.env.MOVING_AVERAGE_PERIOD || 3
 }
