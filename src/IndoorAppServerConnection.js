@@ -2,7 +2,7 @@ const util = require('util');
 const autobahn = require('autobahn');
 const _ = require('lodash');
 const { mod } = require('mathjs');
-const { SMA: MovingAverage } = require('trading-signals');
+const { EMA: MovingAverage } = require('trading-signals');
 
 //TODO: Remove if the headingVector is no longer necessary!
 // const degToRad = v => v * Math.PI / 180;
