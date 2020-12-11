@@ -4,12 +4,8 @@ const _ = require('lodash');
 const { mod } = require('mathjs');
 const { EMA: MovingAverage } = require('trading-signals');
 
-//TODO: Remove if the headingVector is no longer necessary!
-// const degToRad = v => v * Math.PI / 180;
-// const headingVectorFromOrientation = orientation => [Math.cos(orientation), Math.sin(orientation)];
-
 module.exports = class IndoorAppServerConnection {
-    constructor(url, realm, principal, ticket, locationService, inactiveLocationsTimeout = 6000, movingAveragePeriod = 3) {
+    constructor(url, realm, principal, ticket, locationService, inactiveLocationsTimeout = 3000, movingAveragePeriod = 3) {
         this.url = url;
         this.realm = realm;
         this.locationService = locationService;
@@ -22,8 +18,7 @@ module.exports = class IndoorAppServerConnection {
         this.inactiveLocationsTimeout = inactiveLocationsTimeout;
         this.inactiveLocationsInterval = null;
         this.movingAveragePeriod = movingAveragePeriod;
-        this.positionsMovingAverages = {};
-        this.distanceMovingAverages = {};
+        this.movingAverages = {};
         this.beaconRegex = /([ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+\-[ABCDEF0123456789]+)\-(\d+)\-(\d+)/i
         this.connection.onopen = session => {
             console.log('Connected to Indoor App Server');
@@ -39,6 +34,7 @@ module.exports = class IndoorAppServerConnection {
                     if (locationUpdate.position && !_.isArray(locationUpdate.position.Regression) && locationUpdate.beacon) {
                         location.proximity = {
                             distance: locationUpdate.position.Regression,
+                            orientation: mod(-locationUpdate.orientation, 360),
                             zone: locationUpdate.position.Classification
                         };
                         const beaconMatches = locationUpdate.beacon.match(this.beaconRegex);
@@ -52,21 +48,22 @@ module.exports = class IndoorAppServerConnection {
                         if (location.proximity && location.proximity.beacon) {
                             const pId = location.deviceUuid + '-' + location.proximity.beacon.uuid + '-' + location.proximity.beacon.major + '-' + location.proximity.beacon.minor
                             console.log('pId:', pId);
-                            if (!this.distanceMovingAverages[pId]) {
+                            if (!this.movingAverages[pId]) {
                                 const movingAverage = new MovingAverage(this.movingAveragePeriod);
                                 Array(this.movingAveragePeriod - 1).fill(location.proximity.distance).forEach(fillValue => {
                                     movingAverage.update(fillValue);
                                 });
-                                this.distanceMovingAverages[pId] = movingAverage;
+                                this.movingAverages[pId] = movingAverage;
                             }
-                            this.distanceMovingAverages[pId].update(location.proximity.distance);
-                            try { location.proximity.distance = this.distanceMovingAverages[pId].getResult().toNumber(); }
+                            this.movingAverages[pId].update(location.proximity.distance);
+                            try { location.proximity.distance = this.movingAverages[pId].getResult().toNumber(); }
                             catch (e) { console.log('Distance Moving Average Still Not Available:', e.message); }
                         }
+                        clearTimeout(this.inactiveLocationsTimer)
                     } else if (locationUpdate.position && _.isArray(locationUpdate.position.Regression)) {
                         let x = locationUpdate.position.Regression[0];
                         let y = locationUpdate.position.Regression[1];
-                        if (!this.positionsMovingAverages[location.UUID]) {
+                        if (!this.movingAverages[location.UUID]) {
                             const movingAverageX = new MovingAverage(this.movingAveragePeriod);
                             const movingAverageY = new MovingAverage(this.movingAveragePeriod);
                             Array(this.movingAveragePeriod - 1).fill(x).forEach(fillValue => {
@@ -75,16 +72,16 @@ module.exports = class IndoorAppServerConnection {
                             Array(this.movingAveragePeriod - 1).fill(y).forEach(fillValue => {
                                 movingAverageY.update(fillValue);
                             });
-                            this.positionsMovingAverages[location.UUID] = {
+                            this.movingAverages[location.UUID] = {
                                 x: movingAverageX,
                                 y: movingAverageY
                             }
                         }
-                        this.positionsMovingAverages[location.UUID].x.update(x);
-                        this.positionsMovingAverages[location.UUID].y.update(y);
+                        this.movingAverages[location.UUID].x.update(x);
+                        this.movingAverages[location.UUID].y.update(y);
                         try {
-                            x = this.positionsMovingAverages[location.UUID].x.getResult().toNumber();
-                            y = this.positionsMovingAverages[location.UUID].y.getResult().toNumber();
+                            x = this.movingAverages[location.UUID].x.getResult().toNumber();
+                            y = this.movingAverages[location.UUID].y.getResult().toNumber();
                             console.log('Moving Average (' + x + ', ' + y + ')');
                         } catch (e) {
                             console.log('Position Moving Average Still Not Available:', e.message);
@@ -95,8 +92,7 @@ module.exports = class IndoorAppServerConnection {
                             place: locationUpdate.radio_map,
                             zone: locationUpdate.position.Classification
                         };
-                        //TODO: Remove if the headingVector is no longer necessary!
-                        //location.position.headingVector = headingVectorFromOrientation(degToRad(location.position.orientation));
+                        clearTimeout(this.inactiveLocationsTimer)
                     } else { console.error('>> UNKNOWN locationUpdate format!') }
                     return location;
                 });
@@ -104,24 +100,25 @@ module.exports = class IndoorAppServerConnection {
                 try {
                     const locationUpdatesResults = await Promise.all(
                         locations.map(location => {
-                            const query = {
-                                username: location.username,
-                                deviceUuid: location.deviceUuid
+                            if (location.position || location.proximity) {
+                                const query = {
+                                    username: location.username,
+                                    deviceUuid: location.deviceUuid
+                                }
+                                if (location.proximity && location.proximity.beacon) {
+                                    query['proximity.beacon.uuid'] = location.proximity.beacon.uuid;
+                                    query['proximity.beacon.major'] = location.proximity.beacon.major;
+                                    query['proximity.beacon.minor'] = location.proximity.beacon.minor;
+                                } else if (location.position) {
+                                    query['position'] = { $exists: true };
+                                }
+                                return this.locationService ? this.locationService.patch(null, location, { query }) : Promise.resolve(null);
                             }
-                            if (location.proximity && location.proximity.beacon) {
-                                query['proximity.beacon.uuid'] = location.proximity.beacon.uuid;
-                                query['proximity.beacon.major'] = location.proximity.beacon.major;
-                                query['proximity.beacon.minor'] = location.proximity.beacon.minor;
-                            } else if (location.position) {
-                                query['position'] = { $exists: true };
-                            }
-                            return this.locationService ? this.locationService.patch(null, location, { query }) : Promise.resolve(null);
                         })
                     );
                     console.log('>> Updated Locations:', util.inspect(locationUpdatesResults, false, null, true));
                 } catch (e) { console.log('>> Error Updating Locations:', e); }
 
-                clearTimeout(this.inactiveLocationsTimer)
                 this.inactiveLocationsTimer = setTimeout(async () => {
                     console.log('>> Clearing Inactive Locations...');
                     if (this.locationService) {
@@ -130,10 +127,9 @@ module.exports = class IndoorAppServerConnection {
                                 { query: { timestamp: { $lt: new Date().getTime() - this.inactiveLocationsTimeout } } }
                             );
                             removedInactiveLocations.forEach(location => {
-                                delete this.positionsMovingAverages[location.UUID]
                                 if (location.proximity && location.proximity.beacon) {
-                                    delete this.positionsMovingAverages[location.deviceUuid + '-' + location.proximity.beacon.uuid + '-' + location.proximity.beacon.major + '-' + location.proximity.beacon.minor]
-                                }
+                                    delete this.movingAverages[location.deviceUuid + '-' + location.proximity.beacon.uuid + '-' + location.proximity.beacon.major + '-' + location.proximity.beacon.minor]
+                                } else { delete this.movingAverages[location.UUID]; }
                             });
                             console.log('>>> Removed Inactive Locations:', util.inspect(removedInactiveLocations, false, null, true));
                         } catch (e) { console.error('>> Error Removing Inactive Locations:', e.message); }
