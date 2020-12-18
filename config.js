@@ -15,7 +15,7 @@ module.exports = {
             "password": process.env.YANUX_BROKER_AUTHENTICATION_PASSWORD || "admin"
         }
     },
-    "inactive_location_timeout": process.env.INACTIVE_LOCATION_TIMEOUT || 4000,
+    "inactive_location_timeout": process.env.INACTIVE_LOCATION_TIMEOUT || 5000,
     "retry_timer": process.env.RETRY_TIMER || 3000,
     "moving_average_period": process.env.MOVING_AVERAGE_PERIOD || 5
 }
