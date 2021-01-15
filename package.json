@@ -4,8 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "execute": "node app.js",
-    "start": "npm run watch",
+    "start": "node app.js",
     "watch": "npx nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
