@@ -6,7 +6,7 @@ It is a [__Node.js__](https://nodejs.org/) daemon which connects to the [__Indoo
 ## Documentation
 The daemon can be configured through the [__config.js__](config.js) file. The example found on the repository should provide some insights but we wish to offer additional documentation in the future.
 
-### TODO:
+### TO DO:
 - Provide additional documentation.
 
 ## License
