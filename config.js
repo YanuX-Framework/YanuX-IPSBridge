@@ -1,6 +1,6 @@
 module.exports = {
     "indoorapp_server": {
-        "url": process.env.INDOORAPP_SERVER_URL /*|| "wss://indoorlocationapp.herokuapp.com/ws/"*/ || "http://localhost:3101/ws/",
+        "url": process.env.INDOORAPP_SERVER_URL /*|| "wss://indoorlocationapp.herokuapp.com/ws/"*/ || "ws://localhost:3101/ws/",
         "realm": process.env.INDOORAPP_SERVER_REALM || "realm1",
         "authentication": {
             "principal": process.env.INDOORAPP_SERVER_PRINCIPAL || "client1",
