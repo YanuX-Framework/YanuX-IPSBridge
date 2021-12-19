@@ -8,6 +8,9 @@ The daemon can be configured through the [__config.js__](config.js) file. The ex
 
 ### TO DO:
 - Provide additional documentation.
+- Migrate to a newer `ws` package once this issue is resolved: https://github.com/crossbario/autobahn-js/issues/550
+- Migrate to a newer `socket.io-client` package once supported by **Feathers**.
+
 
 ## License
 This work is licensed under [__GNU Affero General Public License Version 3__](LICENSE)
